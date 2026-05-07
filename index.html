@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -64,34 +63,23 @@
         }
         .cat-item.selected .cat-icon { border: 2.5px solid var(--green-theme); background: #f9fbf9; transform: scale(1.05); }
 
-        /* 新增：添加自定義類別按鈕樣式 */
-        .cat-item.add-new .cat-icon { border-style: dashed; color: #ccc; }
-
         .transfer-flow { display: none; padding: 40px 20px; flex-direction: column; gap: 20px; flex: 1; justify-content: center; }
         #input-page.mode-tra .transfer-flow { display: flex; }
         #input-page.mode-tra .cat-grid { display: none; }
         
         .transfer-row { display: flex; align-items: center; justify-content: space-around; }
         .acc-box { text-align: center; flex: 1; }
-        .acc-icon { width: 80px; height: 80px; background: #f9f9f9; border-radius: 20px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 2px solid #eee; cursor: pointer; }
-        /* 新增：針對轉出轉入圖示的細微樣式區分 */
-        .acc-icon.from { border-color: var(--exp-red); background-color: #fff9f9; }
-        .acc-icon.to { border-color: var(--inc-blue); background-color: #f9fbff; }
-
+        .acc-icon { width: 80px; height: 80px; background: #f9f9f9; border-radius: 20px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 2px solid #eee; }
         .acc-box label { font-size: 14px; color: #666; display: block; margin-bottom: 10px; font-weight: bold; }
 
-        /* --- 計算機區塊（更新：縮減高度樣式） --- */
-        .calc-box { 
-            background: var(--green-theme); 
-            border-radius: 25px 25px 0 0; 
-            padding: 10px 15px 15px; /* 稍微縮減頂部內距 */
-        }
-        .calc-display-group { background: white; border-radius: 12px; padding: 8px 12px; margin-bottom: 8px; }
-        .calc-display { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; margin-bottom: 4px; }
-        .calc-display b { font-size: 20px; color: var(--exp-red); } /* 縮小一點點字體 */
+        /* 計算機區塊 */
+        .calc-box { background: var(--green-theme); border-radius: 25px 25px 0 0; padding: 15px; }
+        .calc-display-group { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+        .calc-display { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 8px; }
+        .calc-display b { font-size: 24px; color: var(--exp-red); }
         
-        /* 備註輸入框樣式 */
-        .note-input { border: none; width: 100%; font-size: 13px; color: #666; outline: none; padding: 3px 0; }
+        /* 新增：備註輸入框樣式 */
+        .note-input { border: none; width: 100%; font-size: 14px; color: #666; outline: none; padding: 5px 0; }
         .note-input::placeholder { color: #ccc; }
 
         #input-page.mode-exp .calc-box { background: var(--exp-red); }
@@ -106,36 +94,11 @@
         #input-page.mode-tra .calc-box { background: var(--green-theme); } 
         #input-page.mode-tra .key.white { color: var(--green-theme); }
 
-        /* 鍵盤網格優化高度 */
-        .key-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-        .key { 
-            background: rgba(255,255,255,0.2); 
-            height: 42px; /* 從 50px 縮減至 42px */
-            border-radius: 10px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: white; 
-            font-weight: bold; 
-            font-size: 18px; 
-        }
+        .key-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .key { background: rgba(255,255,255,0.2); height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; }
         .key.white { background: white; }
 
         .add-btn { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 60px; height: 60px; background: var(--green-theme); border-radius: 30px; color: white; font-size: 35px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-
-        /* 新增：自定義類別 Modal 樣式 */
-        #custom-cat-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 200; display: none;
-            align-items: center; justify-content: center;
-        }
-        .modal-content { background: white; width: 80%; border-radius: 15px; padding: 20px; text-align: center; }
-        .modal-input-group { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .modal-input-group input { padding: 10px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
-        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
-        .modal-btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-cancel { background: #eee; color: #666; }
-        .btn-confirm { background: var(--green-theme); color: white; }
     </style>
 </head>
 <body>
@@ -178,8 +141,239 @@
             <div class="transfer-row">
                 <div class="acc-box">
                     <label>轉出帳戶</label>
-                    <!-- 新增：onclick 事件點擊更換 Emoji -->
-                    <div id="tra-from-icon" class="acc-icon from" onclick="changeTraEmoji('from')">💵</div>
+                    <div class="acc-icon">💵</div>
                 </div>
                 <div style="font-size: 32px; color: #ddd; margin-top: 25px;">➔</div>
-                <div class="
+                <div class="acc-box">
+                    <label>轉入帳戶</label>
+                    <div class="acc-icon">💳</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="calc-box">
+            <!-- 修改：將顯示區擴展以容納備註 -->
+            <div class="calc-display-group">
+                <div class="calc-display">
+                    <span id="selected-cat-name" style="color:#999;">請選擇類別</span>
+                    <b id="amt-display">$0</b>
+                </div>
+                <input type="text" id="note-field" class="note-input" placeholder="新增備註...">
+            </div>
+            <div class="key-grid">
+                <div class="key white" onclick="press('7')">7</div><div class="key white" onclick="press('8')">8</div><div class="key white" onclick="press('9')">9</div><div class="key" onclick="press('AC')">AC</div>
+                <div class="key white" onclick="press('4')">4</div><div class="key white" onclick="press('5')">5</div><div class="key white" onclick="press('6')">6</div><div class="key">÷</div>
+                <div class="key white" onclick="press('1')">1</div><div class="key white" onclick="press('2')">2</div><div class="key white" onclick="press('3')">3</div><div class="key">×</div>
+                <div class="key white" onclick="press('.')">.</div><div class="key white" onclick="press('0')">0</div><div class="key white" onclick="press('00')">00</div><div class="key white" style="font-size:14px;" onclick="doSave()">完成</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const today = new Date();
+        let curYear = today.getFullYear();
+        let curMonth = today.getMonth() + 1;
+        let selectedDay = today.getDate();
+
+        let selectedCat = "日用品";
+        let curAmt = "0";
+        let currentMode = 'exp'; 
+        let db = {}; 
+
+        const cats = [
+            {n:'日用品', e:'🧺'}, {n:'餐飲', e:'🍴'}, {n:'交通', e:'🚌'}, {n:'娛樂', e:'👾'}, {n:'服飾', e:'👕'}, {n:'教育', e:'🎓'},
+            {n:'美容', e:'💄'}, {n:'零食', e:'🍭'}, {n:'親子', e:'👶'}, {n:'數位', e:'📷'}, {n:'社交', e:'🥳'}, {n:'旅遊', e:'🧳'},
+            {n:'寵物', e:'🐱'}, {n:'居住', e:'🏠'}, {n:'汽車', e:'🚗'}, {n:'生活繳費', e:'⚡'}, {n:'菸酒', e:'🍺'}, {n:'醫療', e:'🏥'},
+            {n:'美妝', e:'💅'}, {n:'遊戲', e:'🎮'}, {n:'健身', e:'🏋️'}, {n:'鞋包', e:'👠'}, {n:'居家用品', e:'🍳'}, {n:'訂閱', e:'📅'}
+        ];
+
+        const incomeCats = [
+            {n:'薪資', e:'💰'}, {n:'獎金', e:'🧧'}, {n:'投資', e:'📈'}, {n:'兼職', e:'🚴'}, {n:'零用錢', e:'🪙'}, {n:'其他', e:'✨'}
+        ];
+
+        function init() {
+            initDateSelectors();
+            renderCats();
+            renderCal();
+            updateStats();
+        }
+
+        function initDateSelectors() {
+            const ySel = document.getElementById('year-select');
+            const mSel = document.getElementById('month-select');
+            ySel.innerHTML = '';
+            for(let y = curYear - 10; y <= curYear + 10; y++) {
+                const opt = document.createElement('option');
+                opt.value = y; opt.innerText = y + '年';
+                if(y === curYear) opt.selected = true;
+                ySel.appendChild(opt);
+            }
+            mSel.innerHTML = '';
+            for(let m = 1; m <= 12; m++) {
+                const opt = document.createElement('option');
+                opt.value = m; opt.innerText = m + '月';
+                if(m === curMonth) opt.selected = true;
+                mSel.appendChild(opt);
+            }
+            updateCurDateLabel();
+        }
+
+        function goToToday() {
+            const now = new Date();
+            curYear = now.getFullYear();
+            curMonth = now.getMonth() + 1;
+            selectedDay = now.getDate();
+            initDateSelectors();
+            renderCal();
+            updateStats();
+        }
+
+        function handleDateChange() {
+            curYear = parseInt(document.getElementById('year-select').value);
+            curMonth = parseInt(document.getElementById('month-select').value);
+            const daysInMonth = new Date(curYear, curMonth, 0).getDate();
+            if(selectedDay > daysInMonth) selectedDay = daysInMonth;
+            updateCurDateLabel();
+            renderCal();
+            updateStats();
+        }
+
+        function updateCurDateLabel() {
+            document.getElementById('cur-date').innerText = `正在編輯: ${curMonth}月${selectedDay}日`;
+        }
+
+        function renderCats() {
+            const cg = document.getElementById('cat-grid');
+            cg.innerHTML = '';
+            const currentCats = currentMode === 'exp' ? cats : incomeCats;
+            
+            if (currentMode !== 'tra') {
+                selectedCat = currentCats[0].n;
+                document.getElementById('selected-cat-name').innerText = selectedCat;
+                currentCats.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = `cat-item ${selectedCat === c.n ? 'selected' : ''}`;
+                    div.onclick = () => {
+                        document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('selected'));
+                        div.classList.add('selected');
+                        selectedCat = c.n;
+                        document.getElementById('selected-cat-name').innerText = c.n;
+                    };
+                    div.innerHTML = `<div class="cat-icon">${c.e}</div>${c.n}`;
+                    cg.appendChild(div);
+                });
+            } else {
+                document.getElementById('selected-cat-name').innerText = "從 紙鈔 轉到 銀行卡";
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            const page = document.getElementById('input-page');
+            const btns = document.querySelectorAll('.mode-btn');
+            
+            page.className = `mode-${mode} show`;
+            btns.forEach(b => b.classList.remove('active'));
+            document.querySelector(`.mode-btn.${mode}`).classList.add('active');
+            
+            renderCats();
+            curAmt = "0";
+            document.getElementById('amt-display').innerText = '$0';
+            document.getElementById('note-field').value = ""; // 清空備註框
+        }
+
+        function renderCal() {
+            const g = document.getElementById('main-grid');
+            g.innerHTML = '';
+            const daysInMonth = new Date(curYear, curMonth, 0).getDate();
+            const key = `${curYear}-${curMonth}`;
+            const monthData = db[key] || {};
+
+            for(let i=1; i<=daysInMonth; i++) {
+                const d = document.createElement('div');
+                const dData = monthData[i] || {exp: 0, inc: 0, tra: 0, notes: []};
+                
+                // 新增：如果有備註，添加 has-note 類
+                d.className = `cal-day ${i === selectedDay ? 'active' : ''} ${dData.notes && dData.notes.length > 0 ? 'has-note' : ''}`;
+                d.onclick = () => { selectedDay = i; updateCurDateLabel(); renderCal(); };
+                
+                let dayHtml = `<div class="note-dot"></div><span style="font-size:13px;">${i}</span>`;
+                
+                if(dData.inc > 0) dayHtml += `<span class="day-val inc">+${dData.inc}</span>`;
+                if(dData.exp > 0) dayHtml += `<span class="day-val">-${dData.exp}</span>`;
+                if(dData.tra > 0) dayHtml += `<span class="day-val tra">⇄${dData.tra}</span>`;
+                if(dData.inc === 0 && dData.exp === 0 && dData.tra === 0) dayHtml += `<span class="day-val"></span>`;
+                
+                d.innerHTML = dayHtml;
+                g.appendChild(d);
+            }
+        }
+
+        function toggleInput(show) { 
+            document.getElementById('input-page').classList.toggle('show', show);
+            if(show) {
+                setMode('exp');
+                document.getElementById('note-field').value = "";
+            }
+        }
+
+        function press(k) {
+            if(k === 'AC') curAmt = "0";
+            else if(curAmt === "0") curAmt = k;
+            else curAmt += k;
+            document.getElementById('amt-display').innerText = '$' + curAmt;
+        }
+
+        function updateStats() {
+            const key = `${curYear}-${curMonth}`;
+            const monthData = db[key] || {};
+            let totalExp = 0;
+            let totalInc = 0;
+            Object.values(monthData).forEach(d => {
+                totalExp += d.exp;
+                totalInc += d.inc;
+            });
+            document.getElementById('exp-val').innerText = '$' + totalExp;
+            document.getElementById('inc-val').innerText = '$' + totalInc;
+            let balance = totalInc - totalExp;
+            document.getElementById('total-val').innerText = (balance >= 0 ? '$' : '-$') + Math.abs(balance);
+        }
+
+        function doSave() {
+            let val = parseFloat(curAmt);
+            let note = document.getElementById('note-field').value.trim();
+            
+            if(val > 0) {
+                const key = `${curYear}-${curMonth}`;
+                if(!db[key]) db[key] = {};
+                // 初始化該日數據結構，新增 notes 陣列
+                if(!db[key][selectedDay]) db[key][selectedDay] = {exp: 0, inc: 0, tra: 0, notes: []};
+
+                if(currentMode === 'exp') {
+                    db[key][selectedDay].exp += val;
+                } else if(currentMode === 'inc') {
+                    db[key][selectedDay].inc += val;
+                } else if(currentMode === 'tra') {
+                    db[key][selectedDay].exp += val;
+                    db[key][selectedDay].inc += val;
+                    db[key][selectedDay].tra += val;
+                }
+                
+                // 儲存備註
+                if(note) {
+                    db[key][selectedDay].notes.push({mode: currentMode, text: note, amt: val});
+                }
+                
+                updateStats();
+                renderCal();
+            }
+            toggleInput(false);
+            curAmt = "0"; 
+            document.getElementById('amt-display').innerText = '$0';
+            document.getElementById('note-field').value = "";
+        }
+
+        init();
+    </script>
+</body>
+</html>
