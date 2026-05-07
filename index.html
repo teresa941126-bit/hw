@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -6,8 +7,10 @@
     <title>支出記帳 App</title>
     <style>
         :root {
-            --green-theme: #8ba88e; /* 截圖中的草綠色 */
+            --green-theme: #8ba88e; /* 草綠色 */
             --exp-red: #c88c8c;
+            --inc-blue: #7ba8c8; /* 收入藍色 */
+            --tra-purple: #9b8ba8; /* 轉帳紫色 */
             --bg-gray: #f4f6f4;
         }
 
@@ -19,19 +22,38 @@
         .stat-item b { display: block; font-size: 16px; margin-top: 5px; }
         .stat-item label { font-size: 11px; color: #999; }
 
+        .date-nav { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px; }
+        .date-nav select { border: none; font-size: 14px; font-weight: bold; background: transparent; color: #333; outline: none; }
+        .today-btn { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #eee; color: #666; cursor: pointer; }
+
         .cal-box { background: white; margin: 15px; padding: 10px; border-radius: 15px; }
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
-        .cal-day { height: 55px; border: 0.5px solid #f9f9f9; display: flex; flex-direction: column; justify-content: center; border-radius: 8px; cursor: pointer; }
+        .cal-day { height: 55px; border: 0.5px solid #f9f9f9; display: flex; flex-direction: column; justify-content: center; border-radius: 8px; cursor: pointer; position: relative; }
         .cal-day.active { border: 1.5px solid #007aff; background: #f0f7ff; }
-        .day-val { font-size: 8px; color: var(--exp-red); min-height: 10px; }
+        .day-val { font-size: 8px; color: var(--exp-red); min-height: 10px; line-height: 1; }
+        .day-val.inc { color: var(--inc-blue); }
+        .day-val.tra { color: #999; }
+        
+        /* 新增：備註的小圓點提示 */
+        .note-dot { position: absolute; top: 5px; right: 5px; width: 4px; height: 4px; background: #ccc; border-radius: 50%; display: none; }
+        .has-note .note-dot { display: block; }
 
-        /* --- 支出頁面 (圖 10) --- */
+        /* --- 輸入頁面 --- */
         #input-page {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: white; transform: translateY(100%); transition: 0.3s ease;
             z-index: 100; display: flex; flex-direction: column;
         }
         #input-page.show { transform: translateY(0); }
+
+        .mode-switcher {
+            display: flex; background: #eee; border-radius: 20px; padding: 2px; width: 180px; margin: 0 auto;
+        }
+        .mode-btn { flex: 1; padding: 5px 0; border-radius: 18px; font-size: 13px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .mode-btn.active { background: white; font-weight: bold; }
+        .mode-btn.active.exp { color: var(--exp-red); }
+        .mode-btn.active.inc { color: var(--inc-blue); }
+        .mode-btn.active.tra { color: var(--green-theme); }
 
         .cat-grid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 20px; }
         .cat-item { text-align: center; font-size: 11px; color: #555; }
@@ -40,19 +62,80 @@
             border-radius: 12px; margin: 0 auto 5px; display: flex; align-items: center; 
             justify-content: center; font-size: 24px; transition: 0.2s;
         }
-        /* 選中類別的樣式 */
         .cat-item.selected .cat-icon { border: 2.5px solid var(--green-theme); background: #f9fbf9; transform: scale(1.05); }
 
-        /* 計算機區塊 */
-        .calc-box { background: var(--green-theme); border-radius: 25px 25px 0 0; padding: 15px; }
-        .calc-display { background: white; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .calc-display b { font-size: 24px; color: var(--exp-red); }
+        /* 新增：添加自定義類別按鈕樣式 */
+        .cat-item.add-new .cat-icon { border-style: dashed; color: #ccc; }
 
-        .key-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .key { background: rgba(255,255,255,0.2); height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; }
-        .key.white { background: white; color: var(--green-theme); }
+        .transfer-flow { display: none; padding: 40px 20px; flex-direction: column; gap: 20px; flex: 1; justify-content: center; }
+        #input-page.mode-tra .transfer-flow { display: flex; }
+        #input-page.mode-tra .cat-grid { display: none; }
+        
+        .transfer-row { display: flex; align-items: center; justify-content: space-around; }
+        .acc-box { text-align: center; flex: 1; }
+        .acc-icon { width: 80px; height: 80px; background: #f9f9f9; border-radius: 20px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 2px solid #eee; cursor: pointer; }
+        /* 新增：針對轉出轉入圖示的細微樣式區分 */
+        .acc-icon.from { border-color: var(--exp-red); background-color: #fff9f9; }
+        .acc-icon.to { border-color: var(--inc-blue); background-color: #f9fbff; }
+
+        .acc-box label { font-size: 14px; color: #666; display: block; margin-bottom: 10px; font-weight: bold; }
+
+        /* --- 計算機區塊（更新：縮減高度樣式） --- */
+        .calc-box { 
+            background: var(--green-theme); 
+            border-radius: 25px 25px 0 0; 
+            padding: 10px 15px 15px; /* 稍微縮減頂部內距 */
+        }
+        .calc-display-group { background: white; border-radius: 12px; padding: 8px 12px; margin-bottom: 8px; }
+        .calc-display { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; margin-bottom: 4px; }
+        .calc-display b { font-size: 20px; color: var(--exp-red); } /* 縮小一點點字體 */
+        
+        /* 備註輸入框樣式 */
+        .note-input { border: none; width: 100%; font-size: 13px; color: #666; outline: none; padding: 3px 0; }
+        .note-input::placeholder { color: #ccc; }
+
+        #input-page.mode-exp .calc-box { background: var(--exp-red); }
+        #input-page.mode-exp .key.white { color: var(--exp-red); }
+        #input-page.mode-exp .calc-display b { color: var(--exp-red); }
+        
+        #input-page.mode-inc .calc-display b { color: var(--inc-blue); } 
+        #input-page.mode-inc .calc-box { background: var(--inc-blue); } 
+        #input-page.mode-inc .key.white { color: var(--inc-blue); }
+
+        #input-page.mode-tra .calc-display b { color: var(--green-theme); } 
+        #input-page.mode-tra .calc-box { background: var(--green-theme); } 
+        #input-page.mode-tra .key.white { color: var(--green-theme); }
+
+        /* 鍵盤網格優化高度 */
+        .key-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .key { 
+            background: rgba(255,255,255,0.2); 
+            height: 42px; /* 從 50px 縮減至 42px */
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-weight: bold; 
+            font-size: 18px; 
+        }
+        .key.white { background: white; }
 
         .add-btn { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 60px; height: 60px; background: var(--green-theme); border-radius: 30px; color: white; font-size: 35px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+        /* 新增：自定義類別 Modal 樣式 */
+        #custom-cat-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 200; display: none;
+            align-items: center; justify-content: center;
+        }
+        .modal-content { background: white; width: 80%; border-radius: 15px; padding: 20px; text-align: center; }
+        .modal-input-group { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .modal-input-group input { padding: 10px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-cancel { background: #eee; color: #666; }
+        .btn-confirm { background: var(--green-theme); color: white; }
     </style>
 </head>
 <body>
@@ -60,10 +143,15 @@
     <div id="home">
         <div class="header">
             <div style="font-weight:bold;">預設帳本</div>
-            <div id="cur-date" style="font-size:12px; color:#007aff; margin:5px;">正在編輯: 4月24日</div>
+            <div class="date-nav">
+                <select id="year-select" onchange="handleDateChange()"></select>
+                <select id="month-select" onchange="handleDateChange()"></select>
+                <span class="today-btn" onclick="goToToday()">今日</span>
+            </div>
+            <div id="cur-date" style="font-size:12px; color:#007aff; margin:5px;">正在編輯: 4月30日</div>
             <div class="stat-grid">
                 <div class="stat-item"><label>總額</label><b id="total-val">$0</b></div>
-                <div class="stat-item"><label>收入</label><b>$0</b></div>
+                <div class="stat-item"><label>收入</label><b id="inc-val" style="color:var(--inc-blue)">$0</b></div>
                 <div class="stat-item"><label>支出</label><b id="exp-val" style="color:var(--exp-red)">$0</b></div>
             </div>
         </div>
@@ -73,97 +161,25 @@
         <div class="add-btn" onclick="toggleInput(true)">+</div>
     </div>
 
-    <div id="input-page">
+    <div id="input-page" class="mode-exp">
         <div style="padding: 20px; display: flex; justify-content: space-between; align-items: center;">
             <span onclick="toggleInput(false)" style="font-size:20px;">✕</span>
-            <b style="color:var(--green-theme)">支出</b>
+            <div class="mode-switcher">
+                <div class="mode-btn active exp" onclick="setMode('exp')">支出</div>
+                <div class="mode-btn inc" onclick="setMode('inc')">收入</div>
+                <div class="mode-btn tra" onclick="setMode('tra')">轉帳</div>
+            </div>
             <span style="width:20px;"></span>
         </div>
 
         <div class="cat-grid" id="cat-grid"></div>
 
-        <div class="calc-box">
-            <div class="calc-display">
-                <span id="selected-cat-name" style="color:#999;">請選擇類別</span>
-                <b id="amt-display">$0</b>
-            </div>
-            <div class="key-grid">
-                <div class="key white" onclick="press('7')">7</div><div class="key white" onclick="press('8')">8</div><div class="key white" onclick="press('9')">9</div><div class="key" onclick="press('AC')">AC</div>
-                <div class="key white" onclick="press('4')">4</div><div class="key white" onclick="press('5')">5</div><div class="key white" onclick="press('6')">6</div><div class="key">÷</div>
-                <div class="key white" onclick="press('1')">1</div><div class="key white" onclick="press('2')">2</div><div class="key white" onclick="press('3')">3</div><div class="key">×</div>
-                <div class="key white" onclick="press('.')">.</div><div class="key white" onclick="press('0')">0</div><div class="key white" onclick="press('00')">00</div><div class="key white" style="font-size:14px;" onclick="doSave()">完成</div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let selectedDay = 24;
-        let selectedCat = "日用品";
-        let curAmt = "0";
-        let data = {}; // 格式: { day: total }
-
-        const cats = [
-            {n:'日用品', e:'🧺'}, {n:'餐飲', e:'🍴'}, {n:'交通', e:'🚌'}, {n:'娛樂', e:'👾'}, {n:'服飾', e:'👕'}, {n:'教育', e:'🎓'},
-            {n:'美容', e:'💄'}, {n:'零食', e:'🍭'}, {n:'親子', e:'👶'}, {n:'數位', e:'📷'}, {n:'社交', e:'🥳'}, {n:'旅遊', e:'🧳'},
-            {n:'寵物', e:'🐱'}, {n:'居住', e:'🏠'}, {n:'汽車', e:'🚗'}, {n:'生活繳費', e:'⚡'}, {n:'菸酒', e:'🍺'}, {n:'醫療', e:'🏥'},
-            {n:'美妝', e:'💅'}, {n:'遊戲', e:'🎮'}, {n:'健身', e:'🏋️'}, {n:'鞋包', e:'👠'}, {n:'居家用品', e:'🍳'}, {n:'訂閱', e:'📅'}
-        ];
-
-        function init() {
-            // 生成類別
-            const cg = document.getElementById('cat-grid');
-            cats.forEach(c => {
-                const div = document.createElement('div');
-                div.className = `cat-item ${c.n === selectedCat ? 'selected' : ''}`;
-                div.onclick = () => {
-                    document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('selected'));
-                    div.classList.add('selected');
-                    selectedCat = c.n;
-                    document.getElementById('selected-cat-name').innerText = c.n;
-                };
-                div.innerHTML = `<div class="cat-icon">${c.e}</div>${c.n}`;
-                cg.appendChild(div);
-            });
-            renderCal();
-        }
-
-        function renderCal() {
-            const g = document.getElementById('main-grid');
-            g.innerHTML = '';
-            for(let i=1; i<=30; i++) {
-                const d = document.createElement('div');
-                d.className = `cal-day ${i === selectedDay ? 'active' : ''}`;
-                d.onclick = () => { selectedDay = i; document.getElementById('cur-date').innerText = `正在編輯: 4月${i}日`; renderCal(); };
-                d.innerHTML = `<span style="font-size:13px;">${i}</span><span class="day-val">${data[i] ? '-'+data[i] : ''}</span>`;
-                g.appendChild(d);
-            }
-        }
-
-        function toggleInput(show) { document.getElementById('input-page').classList.toggle('show', show); }
-
-        function press(k) {
-            if(k === 'AC') curAmt = "0";
-            else if(curAmt === "0") curAmt = k;
-            else curAmt += k;
-            document.getElementById('amt-display').innerText = '$' + curAmt;
-        }
-
-        function doSave() {
-            let val = parseFloat(curAmt);
-            if(val > 0) {
-                data[selectedDay] = (data[selectedDay] || 0) + val;
-                let totalExp = 0; Object.values(data).forEach(v => totalExp += v);
-                document.getElementById('exp-val').innerText = '$' + totalExp;
-                document.getElementById('total-val').innerText = '-$' + totalExp;
-                renderCal();
-            }
-            toggleInput(false);
-            curAmt = "0"; document.getElementById('amt-display').innerText = '$0';
-
-
-
-            
-        init();
-    </script>
-</body>
-</html>
+        <div class="transfer-flow">
+            <div class="transfer-row">
+                <div class="acc-box">
+                    <label>轉出帳戶</label>
+                    <!-- 新增：onclick 事件點擊更換 Emoji -->
+                    <div id="tra-from-icon" class="acc-icon from" onclick="changeTraEmoji('from')">💵</div>
+                </div>
+                <div style="font-size: 32px; color: #ddd; margin-top: 25px;">➔</div>
+                <div class="
