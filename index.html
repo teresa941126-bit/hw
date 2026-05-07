@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>支出記帳 App</title>
+    <style>
+        :root {
+            --green-theme: #8ba88e; /* 截圖中的草綠色 */
+            --exp-red: #c88c8c;
+            --bg-gray: #f4f6f4;
+        }
+
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-gray); height: 100vh; overflow: hidden; }
+
+        /* --- 主畫面 --- */
+        .header { background: white; padding: 45px 20px 15px; text-align: center; border-bottom: 1px solid #eee; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 15px; }
+        .stat-item b { display: block; font-size: 16px; margin-top: 5px; }
+        .stat-item label { font-size: 11px; color: #999; }
+
+        .cal-box { background: white; margin: 15px; padding: 10px; border-radius: 15px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
+        .cal-day { height: 55px; border: 0.5px solid #f9f9f9; display: flex; flex-direction: column; justify-content: center; border-radius: 8px; cursor: pointer; }
+        .cal-day.active { border: 1.5px solid #007aff; background: #f0f7ff; }
+        .day-val { font-size: 8px; color: var(--exp-red); min-height: 10px; }
+
+        /* --- 支出頁面 (圖 10) --- */
+        #input-page {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; transform: translateY(100%); transition: 0.3s ease;
+            z-index: 100; display: flex; flex-direction: column;
+        }
+        #input-page.show { transform: translateY(0); }
+
+        .cat-grid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 20px; }
+        .cat-item { text-align: center; font-size: 11px; color: #555; }
+        .cat-icon { 
+            width: 50px; height: 50px; background: white; border: 1px solid #eee; 
+            border-radius: 12px; margin: 0 auto 5px; display: flex; align-items: center; 
+            justify-content: center; font-size: 24px; transition: 0.2s;
+        }
+        /* 選中類別的樣式 */
+        .cat-item.selected .cat-icon { border: 2.5px solid var(--green-theme); background: #f9fbf9; transform: scale(1.05); }
+
+        /* 計算機區塊 */
+        .calc-box { background: var(--green-theme); border-radius: 25px 25px 0 0; padding: 15px; }
+        .calc-display { background: white; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .calc-display b { font-size: 24px; color: var(--exp-red); }
+
+        .key-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .key { background: rgba(255,255,255,0.2); height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; }
+        .key.white { background: white; color: var(--green-theme); }
+
+        .add-btn { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 60px; height: 60px; background: var(--green-theme); border-radius: 30px; color: white; font-size: 35px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+    <div id="home">
+        <div class="header">
+            <div style="font-weight:bold;">預設帳本</div>
+            <div id="cur-date" style="font-size:12px; color:#007aff; margin:5px;">正在編輯: 4月24日</div>
+            <div class="stat-grid">
+                <div class="stat-item"><label>總額</label><b id="total-val">$0</b></div>
+                <div class="stat-item"><label>收入</label><b>$0</b></div>
+                <div class="stat-item"><label>支出</label><b id="exp-val" style="color:var(--exp-red)">$0</b></div>
+            </div>
+        </div>
+        <div class="cal-box">
+            <div class="cal-grid" id="main-grid"></div>
+        </div>
+        <div class="add-btn" onclick="toggleInput(true)">+</div>
+    </div>
+
+    <div id="input-page">
+        <div style="padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <span onclick="toggleInput(false)" style="font-size:20px;">✕</span>
+            <b style="color:var(--green-theme)">支出</b>
+            <span style="width:20px;"></span>
+        </div>
+
+        <div class="cat-grid" id="cat-grid"></div>
+
+        <div class="calc-box">
+            <div class="calc-display">
+                <span id="selected-cat-name" style="color:#999;">請選擇類別</span>
+                <b id="amt-display">$0</b>
+            </div>
+            <div class="key-grid">
+                <div class="key white" onclick="press('7')">7</div><div class="key white" onclick="press('8')">8</div><div class="key white" onclick="press('9')">9</div><div class="key" onclick="press('AC')">AC</div>
+                <div class="key white" onclick="press('4')">4</div><div class="key white" onclick="press('5')">5</div><div class="key white" onclick="press('6')">6</div><div class="key">÷</div>
+                <div class="key white" onclick="press('1')">1</div><div class="key white" onclick="press('2')">2</div><div class="key white" onclick="press('3')">3</div><div class="key">×</div>
+                <div class="key white" onclick="press('.')">.</div><div class="key white" onclick="press('0')">0</div><div class="key white" onclick="press('00')">00</div><div class="key white" style="font-size:14px;" onclick="doSave()">完成</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedDay = 24;
+        let selectedCat = "日用品";
+        let curAmt = "0";
+        let data = {}; // 格式: { day: total }
+
+        const cats = [
+            {n:'日用品', e:'🧺'}, {n:'餐飲', e:'🍴'}, {n:'交通', e:'🚌'}, {n:'娛樂', e:'👾'}, {n:'服飾', e:'👕'}, {n:'教育', e:'🎓'},
+            {n:'美容', e:'💄'}, {n:'零食', e:'🍭'}, {n:'親子', e:'👶'}, {n:'數位', e:'📷'}, {n:'社交', e:'🥳'}, {n:'旅遊', e:'🧳'},
+            {n:'寵物', e:'🐱'}, {n:'居住', e:'🏠'}, {n:'汽車', e:'🚗'}, {n:'生活繳費', e:'⚡'}, {n:'菸酒', e:'🍺'}, {n:'醫療', e:'🏥'},
+            {n:'美妝', e:'💅'}, {n:'遊戲', e:'🎮'}, {n:'健身', e:'🏋️'}, {n:'鞋包', e:'👠'}, {n:'居家用品', e:'🍳'}, {n:'訂閱', e:'📅'}
+        ];
+
+        function init() {
+            // 生成類別
+            const cg = document.getElementById('cat-grid');
+            cats.forEach(c => {
+                const div = document.createElement('div');
+                div.className = `cat-item ${c.n === selectedCat ? 'selected' : ''}`;
+                div.onclick = () => {
+                    document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('selected'));
+                    div.classList.add('selected');
+                    selectedCat = c.n;
+                    document.getElementById('selected-cat-name').innerText = c.n;
+                };
+                div.innerHTML = `<div class="cat-icon">${c.e}</div>${c.n}`;
+                cg.appendChild(div);
+            });
+            renderCal();
+        }
+
+        function renderCal() {
+            const g = document.getElementById('main-grid');
+            g.innerHTML = '';
+            for(let i=1; i<=30; i++) {
+                const d = document.createElement('div');
+                d.className = `cal-day ${i === selectedDay ? 'active' : ''}`;
+                d.onclick = () => { selectedDay = i; document.getElementById('cur-date').innerText = `正在編輯: 4月${i}日`; renderCal(); };
+                d.innerHTML = `<span style="font-size:13px;">${i}</span><span class="day-val">${data[i] ? '-'+data[i] : ''}</span>`;
+                g.appendChild(d);
+            }
+        }
+
+        function toggleInput(show) { document.getElementById('input-page').classList.toggle('show', show); }
+
+        function press(k) {
+            if(k === 'AC') curAmt = "0";
+            else if(curAmt === "0") curAmt = k;
+            else curAmt += k;
+            document.getElementById('amt-display').innerText = '$' + curAmt;
+        }
+
+        function doSave() {
+            let val = parseFloat(curAmt);
+            if(val > 0) {
+                data[selectedDay] = (data[selectedDay] || 0) + val;
+                let totalExp = 0; Object.values(data).forEach(v => totalExp += v);
+                document.getElementById('exp-val').innerText = '$' + totalExp;
+                document.getElementById('total-val').innerText = '-$' + totalExp;
+                renderCal();
+            }
+            toggleInput(false);
+            curAmt = "0"; document.getElementById('amt-display').innerText = '$0';
+        }
+
+        init();
+    </script>
+</body>
+</html>
