@@ -42,6 +42,26 @@
         .note-dot { position: absolute; top: 5px; right: 5px; width: 4px; height: 4px; background: var(--green-theme); border-radius: 50%; display: none; }
         .has-note .note-dot { display: block; }
 
+        /* --- 新增：日明細樣式 --- */
+        #day-detail-panel {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 40%;
+            background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            transform: translateY(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 80; display: flex; flex-direction: column; padding-bottom: 20px;
+        }
+        #day-detail-panel.show { transform: translateY(0); }
+        .detail-header { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center; }
+        .detail-list { flex: 1; overflow-y: auto; padding: 10px 20px; }
+        .detail-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f9f9f9; transition: transform 0.2s; position: relative; overflow: hidden; }
+        .detail-icon { width: 40px; height: 40px; background: #f5f5f5; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 12px; }
+        .detail-info { flex: 1; }
+        .detail-title { font-size: 14px; font-weight: bold; color: #333; }
+        .detail-note { font-size: 12px; color: #999; }
+        .detail-amt { font-weight: bold; font-size: 15px; }
+        .amt-exp { color: var(--exp-red); }
+        .amt-inc { color: var(--inc-blue); }
+        .amt-tra { color: var(--green-theme); }
+
         /* --- 輸入頁面 --- */
         #input-page {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -158,7 +178,7 @@
         .info-hint { font-size: 11px; color: #bbb; margin-top: 4px; display: block; }
     </style>
 </head>
-<body>
+<body onclick="closeDayDetailOutside(event)">
 
     <div id="home">
         <div class="header">
@@ -188,6 +208,17 @@
             <div class="cal-grid" id="main-grid"></div>
         </div>
         <div class="add-btn" onclick="toggleInput(true)">+</div>
+    </div>
+
+    <!-- 新增：日明細面板 -->
+    <div id="day-detail-panel">
+        <div class="detail-header">
+            <span id="detail-date-title" style="font-weight:bold;">4月30日 明細</span>
+            <span onclick="toggleDayDetail(false)" style="color:#999; font-size: 20px;">✕</span>
+        </div>
+        <div class="detail-list" id="detail-list-content">
+            <!-- 動態插入明細內容 -->
+        </div>
     </div>
 
     <!-- 輸入頁面 -->
@@ -382,7 +413,8 @@
             const ySel = document.getElementById('year-select');
             const mSel = document.getElementById('month-select');
             ySel.innerHTML = '';
-            for(let y = curYear - 5; y <= curYear + 5; y++) {
+            // 修改內容：將年份範圍由原本的 +/- 5 年調整為 +/- 100 年
+            for(let y = curYear - 100; y <= curYear + 100; y++) {
                 const opt = document.createElement('option');
                 opt.value = y; opt.innerText = y + '年';
                 if(y === curYear) opt.selected = true;
@@ -612,7 +644,15 @@
                 const d = document.createElement('div');
                 const dData = monthData[i] || {exp: 0, inc: 0, tra: 0, notes: []};
                 d.className = `cal-day ${i === selectedDay ? 'active' : ''} ${dData.notes && dData.notes.length > 0 ? 'has-note' : ''}`;
-                d.onclick = () => { selectedDay = i; updateCurDateLabel(); renderCal(); };
+                
+                // 修改：點擊日期觸發明細顯示
+                d.onclick = () => { 
+                    selectedDay = i; 
+                    updateCurDateLabel(); 
+                    renderCal(); 
+                    showDayDetail(i);
+                };
+
                 let dayHtml = `<div class="note-dot"></div><span style="font-size:13px; font-weight: bold;">${i}</span>`;
                 if(dData.inc > 0) dayHtml += `<span class="day-val inc">+${Math.floor(dData.inc)}</span>`;
                 if(dData.exp > 0) dayHtml += `<span class="day-val">-${Math.floor(dData.exp)}</span>`;
@@ -622,11 +662,111 @@
             }
         }
 
+        // --- 新增：日明細邏輯 ---
+        function showDayDetail(day) {
+            const key = `${curYear}-${curMonth}`;
+            const dayData = (db[key] && db[key][day]) ? db[key][day] : { notes: [] };
+            const listContent = document.getElementById('detail-list-content');
+            const title = document.getElementById('detail-date-title');
+            
+            title.innerText = `${curMonth}月${day}日 明細`;
+            listContent.innerHTML = '';
+            
+            if (!dayData.notes || dayData.notes.length === 0) {
+                listContent.innerHTML = '<div style="text-align:center; color:#ccc; margin-top:30px; font-size:14px;">本日無紀錄</div>';
+            } else {
+                dayData.notes.forEach((item, index) => {
+                    // 根據類別名稱找對應的 icon
+                    let icon = '❓';
+                    let allPossibleCats = [...cats, ...incomeCats, ...customCats.exp, ...customCats.inc];
+                    let foundCat = allPossibleCats.find(c => c.n === item.text);
+                    if (foundCat) icon = foundCat.e;
+                    else if (item.mode === 'tra') icon = '⇄';
+
+                    const div = document.createElement('div');
+                    div.className = 'detail-item';
+                    
+                    // --- 新增：滑動刪除事件 ---
+                    let startX = 0;
+                    div.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, {passive: true});
+                    div.addEventListener('touchend', (e) => {
+                        let endX = e.changedTouches[0].clientX;
+                        if (endX - startX > 50) { // 右滑大於 50px
+                            if(confirm(`確定要刪除「${item.text}：$${item.amt}」這筆紀錄嗎？`)) {
+                                deleteRecord(day, index);
+                            }
+                        }
+                    }, {passive: true});
+                    
+                    let amtClass = 'amt-exp';
+                    let prefix = '-';
+                    if (item.mode === 'inc') { amtClass = 'amt-inc'; prefix = '+'; }
+                    else if (item.mode === 'tra') { amtClass = 'amt-tra'; prefix = ''; }
+
+                    div.innerHTML = `
+                        <div class="detail-icon">${icon}</div>
+                        <div class="detail-info">
+                            <div class="detail-title">${item.text}</div>
+                            ${item.note ? `<div class="detail-note">${item.note}</div>` : ''}
+                        </div>
+                        <div class="detail-amt ${amtClass}">${prefix}$${item.amt}</div>
+                    `;
+                    listContent.appendChild(div);
+                });
+            }
+            toggleDayDetail(true);
+        }
+
+        // --- 新增：刪除紀錄核心邏輯 ---
+        function deleteRecord(day, recordIndex) {
+            const key = `${curYear}-${curMonth}`;
+            if (!db[key] || !db[key][day]) return;
+            
+            const record = db[key][day].notes[recordIndex];
+            const val = record.amt;
+            
+            // 扣除該日統計
+            if(record.mode === 'exp') db[key][day].exp -= val;
+            else if(record.mode === 'inc') db[key][day].inc -= val;
+            else if(record.mode === 'tra') db[key][day].tra -= val;
+            
+            // 從陣列中移除
+            db[key][day].notes.splice(recordIndex, 1);
+            
+            // 若該日已無紀錄，可選清理
+            if(db[key][day].notes.length === 0) {
+                db[key][day].exp = 0;
+                db[key][day].inc = 0;
+                db[key][day].tra = 0;
+            }
+            
+            // 同步 UI 與資產
+            updateStats();
+            renderCal();
+            showDayDetail(day);
+        }
+
+        function toggleDayDetail(show) {
+            const panel = document.getElementById('day-detail-panel');
+            if (show) panel.classList.add('show');
+            else panel.classList.remove('show');
+        }
+
+        function closeDayDetailOutside(e) {
+            const panel = document.getElementById('day-detail-panel');
+            const calBox = document.querySelector('.cal-box');
+            // 如果點擊的地方不在明細面板內，且不在日曆格子內，則關閉明細
+            if (panel.classList.contains('show') && !panel.contains(e.target) && !calBox.contains(e.target) && !e.target.closest('.cal-day')) {
+                toggleDayDetail(false);
+            }
+        }
+
         function toggleInput(show) { 
             const page = document.getElementById('input-page');
             if (show) {
                 page.classList.add('show');
                 setMode('exp');
+                toggleDayDetail(false); // 打開輸入時關閉明細
             } else {
                 page.classList.remove('show');
             }
@@ -677,9 +817,12 @@
                 else if(currentMode === 'tra') db[key][selectedDay].tra += val;
                 
                 let recordLabel = currentMode === 'tra' ? `從${traFromAcc.n}到${traToAcc.n}` : selectedCat;
-                db[key][selectedDay].notes.push({mode: currentMode, text: note || recordLabel, amt: val});
+                // 修改：儲存時帶上 note
+                db[key][selectedDay].notes.push({mode: currentMode, text: recordLabel, note: note, amt: val});
                 updateStats();
                 renderCal();
+                // 儲存後更新當前明細顯示
+                showDayDetail(selectedDay);
             }
             toggleInput(false);
             curAmt = "0"; 
